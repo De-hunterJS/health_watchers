@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { Schema, Types, model, models } from 'mongoose';
 import { AppRole } from '@api/types/express';
+import { baseSchema } from '@api/shared';
 
 const ROLES: AppRole[] = [
   'SUPER_ADMIN',
@@ -41,6 +42,7 @@ export interface User {
   clinicId: Types.ObjectId;
   patientId?: Types.ObjectId; // set when role === 'PATIENT'
   isActive: boolean;
+  createdBy?: Types.ObjectId;
   emailVerified: boolean;
   emailVerificationTokenHash?: string;
   mfaEnabled: boolean;
@@ -79,9 +81,7 @@ const userSchema = new Schema(
     },
     password: { type: String, required: true },
     role: { type: String, enum: ROLES, required: true },
-    clinicId: { type: Schema.Types.ObjectId, ref: 'Clinic', required: true },
     patientId: { type: Schema.Types.ObjectId, ref: 'Patient', default: undefined },
-    isActive: { type: Boolean, default: true, index: true },
     emailVerified: { type: Boolean, default: false },
     emailVerificationTokenHash: {
       type: String,
@@ -184,6 +184,8 @@ const userSchema = new Schema(
   },
   { timestamps: true, versionKey: false }
 );
+
+userSchema.add(baseSchema);
 
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
